@@ -2,32 +2,69 @@
 #include <vector>
 #include <cstdio>
 #include <cmath>
+#include <fstream>
+#include "levels.h"
+using namespace std;
 
+
+//-----------Structures-------------
 struct Brick {
     float x, y;
     bool destroyed = false;
+
 };
 
-const int windowWidth = 600, windowHeight = 500;
 
+// ----------------- Window -----------------
+const int windowWidth = 600, windowHeight = 600;
+
+// ----------------- Game Variables -----------------
 float paddleX = 250;
 float paddleWidth = 100, paddleHeight = 10;
 
 float ballX = 300, ballY = 250;
 float ballRadius = 8;
-float dx = 3, dy = 4;
+float dx, dy;
 
-std::vector<Brick> bricks;
-int rows = 5, cols = 8;
+vector<Brick> bricks;
 float brickWidth = 60, brickHeight = 20;
 
 int score = 0;
 bool gameOver = false;
 
+
+// ----------------- Levels -----------------
+int levelNumber = 1;
+Level* currentLevel = nullptr;
+
+
+// ----------------- Progress -----------------
+
+
+void saveProgress(int level) {
+    ofstream file("progress.txt");
+    if(file.is_open()) {
+        file << level;
+        file.close();
+    }
+}
+
+int loadProgress() {
+    ifstream file("progress.txt");
+    int lvl = 1;
+    if(file.is_open()) {
+        file >> lvl;
+        file.close();
+    }
+    return lvl;
+}
+
 void drawRect(float x, float y, float w, float h) {
     glBegin(GL_QUADS);
-    glVertex2f(x, y); glVertex2f(x+w, y);
-    glVertex2f(x+w, y+h); glVertex2f(x, y+h);
+    glVertex2f(x, y); 
+    glVertex2f(x+w, y);
+    glVertex2f(x+w, y+h); 
+    glVertex2f(x, y+h);
     glEnd();
 }
 
@@ -46,48 +83,109 @@ void drawText(float x, float y, const char* str) {
         glutBitmapCharacter(GLUT_BITMAP_9_BY_15, *c);
 }
 
+
+// ----------------- Game Functions -----------------
 void resetGame() {
     bricks.clear();
-    for (int r = 0; r < rows; r++) {
-        for (int c = 0; c < cols; c++) {
-            bricks.push_back({ c * (brickWidth + 10) + 35, r * (brickHeight + 10) + 40 });
+
+    dx = currentLevel->dx;       
+    dy = currentLevel->dy;
+    paddleWidth = currentLevel->paddleWidth;
+
+
+    if(currentLevel == &level1)
+    {
+        // Pyramid | Triangle Pattern for level1
+        int baseCols = currentLevel->rows;
+        int rows = currentLevel->rows;
+
+        for(int r = 0; r<rows; r++)
+        {
+            int cols = baseCols - r;  // For each rows columns number
+            float startX = (windowWidth - (cols * (brickWidth + 10) - 10)) / 2; // center-align
+            for(int c = 0; c < cols; c++) 
+            {
+                bricks.push_back({startX + c * (brickWidth + 10), r * (brickHeight + 10) + 40});
+            }
+        }
+    } else {
+        int cols = currentLevel->cols;
+        int rows = currentLevel->rows;
+
+        // horizontal center calculation
+        float totalWidth = cols * (brickWidth + 10) - 10; // Total brick width + gap
+        float startX = (windowWidth - totalWidth) / 2;
+
+        for (int r = 0; r < rows; r++) {
+            for (int c = 0; c < cols; c++) {
+                float x = startX + c * (brickWidth + 10);
+                float y = r * (brickHeight + 10) + 40; // 40 px top margin
+                bricks.push_back({x, y});
+            }
         }
     }
-    ballX = 300;
-    ballY = 250;
-    dx = 3; dy = 4;
+    
+    ballX = windowWidth/2;
+    ballY = windowHeight/2;
+    paddleX = windowWidth/2 - paddleWidth/2;
+    
+
     score = 0;
     gameOver = false;
 }
 
+
+void nextLevel() {
+    if(levelNumber == 1)
+    { 
+        levelNumber=2; 
+        currentLevel=&level2; 
+        saveProgress(levelNumber); 
+        resetGame(); 
+    } else {
+        gameOver = true;
+    }
+}
+
+// ----------------- Display -----------------
 void display() {
     glClear(GL_COLOR_BUFFER_BIT);
+
+    //Paddle
     glColor3f(0, 0, 1);
     drawRect(paddleX, windowHeight - 30, paddleWidth, paddleHeight);
 
+
+    //Ball
     glColor3f(1, 1, 1);
     drawCircle(ballX, ballY, ballRadius);
 
-    for (const auto& b : bricks) {
-        if (!b.destroyed) {
-            glColor3f(0, 1, 0);
-            drawRect(b.x, b.y, brickWidth, brickHeight);
-        }
+    // Bricks
+    for(const auto& b: bricks){
+    if(!b.destroyed){
+        glColor3f(currentLevel->brickColor[0],
+                  currentLevel->brickColor[1],
+                  currentLevel->brickColor[2]);
+        drawRect(b.x,b.y,brickWidth,brickHeight);
     }
+}
 
-    glColor3f(1, 1, 1);
-    char scoreText[50];
-    sprintf(scoreText, "Score: %d", score);
-    drawText(10, 10, scoreText);
+    // Score & Level
+    char scoreText[50]; 
+    sprintf(scoreText, "Score: %d", score); drawText(10,10,scoreText);
 
-    if (gameOver) {
-        glColor3f(1, 0, 0);
-        drawText(200, 250, "Game Over! Press R to Restart");
+    char levelText[20]; 
+    sprintf(levelText, "Level: %d", levelNumber); drawText(windowWidth-100,10,levelText);
+
+    if(gameOver){
+        glColor3f(1,0,0);
+        drawText(200, windowHeight/2, "Game Over! Press R to Restart");
     }
 
     glutSwapBuffers();
 }
 
+// ----------------- Update -----------------
 void update(int val) {
     if (gameOver) {
         glutTimerFunc(16, update, 0);
@@ -99,9 +197,18 @@ void update(int val) {
     ballY += dy;
 
     // Wall collision
-    if (ballX < 0 || ballX > windowWidth) dx *= -1;
-    if (ballY < 0) dy *= -1;
-    if (ballY > windowHeight) gameOver = true;
+    if (ballX < 0 || ballX > windowWidth) 
+    {
+        dx = dx * (-1);
+    }
+    if (ballY < 0) 
+    {
+        dy = dy * (-1);
+    }
+    if (ballY > windowHeight) 
+    {
+        gameOver = true;
+    }
 
     // Paddle collision
     if (ballY + ballRadius >= windowHeight - 30 &&
@@ -121,12 +228,23 @@ void update(int val) {
         }
     }
 
+    // Check level complete
+    bool allDestroyed = true;
+    for(auto &b: bricks) if(!b.destroyed) allDestroyed=false;
+    if(allDestroyed) nextLevel();
+
+
     glutPostRedisplay();
-    glutTimerFunc(16, update, 0);
+    glutTimerFunc(32, update, 0);
 }
 
 void keyboard(unsigned char key, int, int) {
-    if (key == 'r' || key == 'R') resetGame();
+    if(key=='r' || key=='R'){
+        levelNumber=1;
+        currentLevel=&level1;
+        saveProgress(levelNumber);
+        resetGame();
+    }
 }
 
 void special(int key, int, int) {
@@ -136,6 +254,7 @@ void special(int key, int, int) {
         paddleX += 15;
 }
 
+// ----------------- Init -----------------
 void init() {
     glMatrixMode(GL_PROJECTION);
     gluOrtho2D(0, windowWidth, windowHeight, 0);
@@ -143,7 +262,14 @@ void init() {
     resetGame();
 }
 
+// ----------------- Main -----------------
 int main(int argc, char** argv) {
+
+    levelNumber = loadProgress();
+    if(levelNumber==1) currentLevel = &level1;
+    else if(levelNumber==2) currentLevel = &level2;
+ 
+
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);
     glutInitWindowSize(windowWidth, windowHeight);
