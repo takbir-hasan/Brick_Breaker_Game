@@ -105,7 +105,9 @@ void resetGame() {
             float startX = (windowWidth - (cols * (brickWidth + 10) - 10)) / 2; // center-align
             for(int c = 0; c < cols; c++) 
             {
-                bricks.push_back({startX + c * (brickWidth + 10), r * (brickHeight + 10) + 40});
+                float x = startX + c * (brickWidth + 10);
+                float y = r * (brickHeight + 10) + 80; // 80 px top margin and 10 px gap
+                bricks.push_back({x, y}); 
             }
         }
     } else {
@@ -113,13 +115,13 @@ void resetGame() {
         int rows = currentLevel->rows;
 
         // horizontal center calculation
-        float totalWidth = cols * (brickWidth + 10) - 10; // Total brick width + gap
+        float totalWidth = cols * (brickWidth + 10) - 10; // Total brick width +  10 px gap
         float startX = (windowWidth - totalWidth) / 2;
 
         for (int r = 0; r < rows; r++) {
             for (int c = 0; c < cols; c++) {
                 float x = startX + c * (brickWidth + 10);
-                float y = r * (brickHeight + 10) + 40; // 40 px top margin
+                float y = r * (brickHeight + 10) + 80; // 80 px top margin and 10 px gap
                 bricks.push_back({x, y});
             }
         }
@@ -161,25 +163,36 @@ void display() {
     drawCircle(ballX, ballY, ballRadius);
 
     // Bricks
-    for(const auto& b: bricks){
-    if(!b.destroyed){
-        glColor3f(currentLevel->brickColor[0],
-                  currentLevel->brickColor[1],
-                  currentLevel->brickColor[2]);
-        drawRect(b.x,b.y,brickWidth,brickHeight);
+    for(const auto& b: bricks)
+    {
+        if(!b.destroyed){
+            glColor3f(currentLevel->brickColor[0],
+                    currentLevel->brickColor[1],
+                    currentLevel->brickColor[2]);
+            drawRect(b.x,b.y,brickWidth,brickHeight);
+        }
     }
-}
 
     // Score & Level
     char scoreText[50]; 
-    sprintf(scoreText, "Score: %d", score); drawText(10,10,scoreText);
+    sprintf(scoreText, "Score: %d", score); drawText(50,50,scoreText);
 
     char levelText[20]; 
-    sprintf(levelText, "Level: %d", levelNumber); drawText(windowWidth-100,10,levelText);
+    sprintf(levelText, "Level: %d", levelNumber); drawText(windowWidth-100,50,levelText);
 
     if(gameOver){
-        glColor3f(1,0,0);
-        drawText(200, windowHeight/2, "Game Over! Press R to Restart");
+        glColor3f(1,1,1); // Red color for game over text
+        const char* msg = "Game Over! Press R to Restart";
+        int textWidth = 0;
+        for (const char* c = msg; *c; ++c)
+        {
+            // Calculate total width of the text
+            textWidth += glutBitmapWidth(GLUT_BITMAP_9_BY_15, *c);
+        }
+        // Calculate centered position
+        float centerX = windowWidth / 2.0f;
+        float posX = centerX - textWidth / 2.0f;
+        drawText(posX, 50, msg); // Here 50 is y position and posX is x position left aligned
     }
 
     glutSwapBuffers();
@@ -230,18 +243,26 @@ void update(int val) {
 
     // Check level complete
     bool allDestroyed = true;
-    for(auto &b: bricks) if(!b.destroyed) allDestroyed=false;
-    if(allDestroyed) nextLevel();
+    for(auto &b: bricks) 
+    {
+        if(!b.destroyed)
+        {
+            allDestroyed=false;
+        }
+    }
+
+    if(allDestroyed)
+    {
+        nextLevel();
+    }
 
 
     glutPostRedisplay();
     glutTimerFunc(32, update, 0);
 }
 
-void keyboard(unsigned char key, int, int) {
+void keyboard(unsigned char key, int, int) { // We can ignore x and y because we don’t use the mouse position.
     if(key=='r' || key=='R'){
-        levelNumber=1;
-        currentLevel=&level1;
         saveProgress(levelNumber);
         resetGame();
     }
@@ -249,9 +270,13 @@ void keyboard(unsigned char key, int, int) {
 
 void special(int key, int, int) {
     if (key == GLUT_KEY_LEFT && paddleX > 0)
+    {
         paddleX -= 15;
+    }
     if (key == GLUT_KEY_RIGHT && paddleX + paddleWidth < windowWidth)
+    {
         paddleX += 15;
+    }
 }
 
 // ----------------- Init -----------------
@@ -266,8 +291,13 @@ void init() {
 int main(int argc, char** argv) {
 
     levelNumber = loadProgress();
-    if(levelNumber==1) currentLevel = &level1;
-    else if(levelNumber==2) currentLevel = &level2;
+    if(levelNumber==1){
+        currentLevel = &level1;
+    }
+    else if(levelNumber==2) 
+    {
+        currentLevel = &level2;
+    }
  
 
     glutInit(&argc, argv);
