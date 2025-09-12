@@ -4,8 +4,12 @@
 #include <cmath>
 #include <fstream>
 #include <random>
+#include <windows.h>
+#include <mmsystem.h>
 #include "levels.h"
 using namespace std;
+
+#pragma comment(lib, "winmm.lib")
 
 
 //-----------Structures-------------
@@ -88,6 +92,10 @@ float levelCompleteTime = 0.0f;
 float screenShake = 0.0f;
 int scoreChange = 0;
 float scoreChangeTime = 0.0f;
+
+// Sound effects
+bool soundEnabled = true;
+int lastHitSound = 0;
 
 
 // ----------------- Levels -----------------
@@ -233,6 +241,38 @@ void drawParticles() {
     }
     
     glDisable(GL_BLEND);
+}
+
+// ----------------- Sound Functions -----------------
+void playSound(const char* filename) {
+    if (!soundEnabled) return;
+    
+    char fullPath[256];
+    sprintf(fullPath, "assets/%s", filename);
+    PlaySoundA(fullPath, NULL, SND_ASYNC | SND_FILENAME);
+}
+
+void playHitSound() {
+    if (!soundEnabled) return;
+    
+    lastHitSound = (lastHitSound + 1) % 3;
+    switch(lastHitSound) {
+        case 0: playSound("hit_1.wav"); break;
+        case 1: playSound("hit_2.wav"); break;
+        case 2: playSound("hit_3.wav"); break;
+    }
+}
+
+void playGameOverSound() {
+    if (!soundEnabled) return;
+    
+    static int gameOverSound = 0;
+    gameOverSound = (gameOverSound + 1) % 2;
+    if (gameOverSound == 0) {
+        playSound("game_over_1.wav");
+    } else {
+        playSound("game_over_2.wav");
+    }
 }
 
 
@@ -449,6 +489,12 @@ void display() {
     char levelText[20]; 
     sprintf(levelText, "Level: %d", levelNumber); 
     drawText(windowWidth - 120, 30, levelText);
+    
+    // Sound status
+    glColor3f(Colors::TEXT_COLOR[0], Colors::TEXT_COLOR[1], Colors::TEXT_COLOR[2]);
+    char soundText[20];
+    sprintf(soundText, "Sound: %s", soundEnabled ? "ON" : "OFF");
+    drawText(windowWidth - 120, 50, soundText);
 
     // Level complete message
     if(showLevelComplete) {
@@ -473,6 +519,16 @@ void display() {
         float centerX = windowWidth / 2.0f;
         float posX = centerX - textWidth / 2.0f;
         drawText(posX, windowHeight / 2, msg);
+        
+        // Instructions
+        glColor3f(Colors::TEXT_COLOR[0], Colors::TEXT_COLOR[1], Colors::TEXT_COLOR[2]);
+        const char* inst1 = "S - Toggle Sound | ESC - Exit";
+        textWidth = 0;
+        for (const char* c = inst1; *c; ++c) {
+            textWidth += glutBitmapWidth(GLUT_BITMAP_9_BY_15, *c);
+        }
+        posX = centerX - textWidth / 2.0f;
+        drawText(posX, windowHeight / 2 + 30, inst1);
     }
     
     glPopMatrix(); // End screen shake transformation
@@ -533,6 +589,7 @@ void update(int val) {
     if (ballY > windowHeight) 
     {
         gameOver = true;
+        playGameOverSound();
     }
 
     // Paddle collision
@@ -543,6 +600,8 @@ void update(int val) {
         createParticles(ballX, ballY, Colors::PARTICLE_PADDLE, PARTICLE_COUNT_PADDLE);
         // Add screen shake
         screenShake = 0.3f;
+        // Play hit sound
+        playHitSound();
     }
 
     // Brick collision
@@ -560,6 +619,8 @@ void update(int val) {
             createParticles(b.x + brickWidth/2, b.y + brickHeight/2, Colors::PARTICLE_BRICK, PARTICLE_COUNT_BRICK);
             // Add screen shake
             screenShake = 0.2f;
+            // Play hit sound
+            playHitSound();
             break;
         }
     }
@@ -578,6 +639,8 @@ void update(int val) {
     {
         showLevelComplete = true;
         levelCompleteTime = 0.0f;
+        // Play level complete sound
+        playHitSound();
         // Go to next level after a short delay
         static int levelCompleteTimer = 0;
         levelCompleteTimer++;
@@ -592,10 +655,19 @@ void update(int val) {
     glutTimerFunc(32, update, 0);
 }
 
-void keyboard(unsigned char key, int, int) { // We can ignore x and y because we don’t use the mouse position.
+void keyboard(unsigned char key, int, int) { // We can ignore x and y because we don't use the mouse position.
     if(key=='r' || key=='R'){
         saveProgress(levelNumber);
         resetGame();
+    }
+    if(key=='s' || key=='S'){
+        soundEnabled = !soundEnabled;
+        if(soundEnabled) {
+            playHitSound(); // Test sound when enabling
+        }
+    }
+    if(key==27) { // ESC key
+        exit(0);
     }
 }
 
