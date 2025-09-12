@@ -5,7 +5,7 @@ This game is developed using C++ OpenGL.
 ```
 g++ main.cpp level1.cpp level2.cpp -o main -lGL -lGLU -lglut
 Or
-g++ main.cpp level1.cpp level2.cpp -o main.exe -lfreeglut -lopengl32 -lglu32
+g++ main.cpp level1.cpp level2.cpp level3.cpp level4.cpp level5.cpp -o main.exe -lfreeglut -lopengl32 -lglu32
 ```
 ```
 ./main
