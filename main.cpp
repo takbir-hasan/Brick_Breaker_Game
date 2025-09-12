@@ -16,7 +16,7 @@ struct Brick {
 
 
 // ----------------- Window -----------------
-const int windowWidth = 600, windowHeight = 600;
+const int windowWidth = 900, windowHeight = 900;
 
 // ----------------- Game Variables -----------------
 float paddleX = 250;
@@ -82,6 +82,21 @@ void drawText(float x, float y, const char* str) {
     for (const char* c = str; *c; ++c)
         glutBitmapCharacter(GLUT_BITMAP_9_BY_15, *c);
 }
+
+
+// Stroke text for larger messages
+void drawStrokeText(float x, float y, const char* str, float scale = 0.2f) 
+{
+    glPushMatrix();
+    glTranslatef(x, y, 0);
+    glScalef(scale, -scale, 1);
+    for (const char* c = str; *c; ++c)
+    {
+        glutStrokeCharacter(GLUT_STROKE_ROMAN, *c);
+    }
+    glPopMatrix();
+}
+
 
 
 // ----------------- Game Functions -----------------
@@ -180,7 +195,41 @@ void resetGame() {
                 }
             }
         }
+    } else if(currentLevel == &level6) {
+        // Full grid with star pattern for level6
+        int cols = currentLevel->cols;
+        int rows = currentLevel->rows;
+
+        float totalWidth = cols * (brickWidth + 10) - 10;
+        float startX = (windowWidth - totalWidth) / 2;
+
+        // Star pattern
+        int starPattern[rows][cols] = {
+            {0,0,0,0,0,1,0,0,0,0,0},
+            {0,0,0,0,1,1,1,0,0,0,0},
+            {0,0,0,1,0,1,0,1,0,0,0},
+            {0,0,1,0,0,1,0,0,1,0,0},
+            {0,1,0,0,0,1,0,0,0,1,0},
+            {1,1,1,1,1,1,1,1,1,1,1},
+            {0,1,0,0,0,1,0,0,0,1,0},
+            {0,0,1,0,0,1,0,0,1,0,0},
+            {0,0,0,1,0,1,0,1,0,0,0},
+            {0,0,0,0,1,1,1,0,0,0,0},
+            {0,0,0,0,0,1,0,0,0,0,0}
+        };
+
+        for(int r = 0; r < rows; r++) {
+            for(int c = 0; c < cols; c++) {
+                if(starPattern[r][c] == 1) {
+                    float x = startX + c * (brickWidth + 10);
+                    float y = r * (brickHeight + 10) + 80;
+                    bricks.push_back({x, y});
+                }
+            }
+        }
     }
+
+    
     
     ballX = windowWidth/2;
     ballY = windowHeight/2;
@@ -189,6 +238,7 @@ void resetGame() {
 
     score = 0;
     gameOver = false;
+
 }
 
 
@@ -214,7 +264,13 @@ void nextLevel() {
         currentLevel=&level5; 
         saveProgress(levelNumber); 
         resetGame(); 
-    } else {
+    } else if(levelNumber == 5) {
+        levelNumber=6;
+        currentLevel=&level6; 
+        saveProgress(levelNumber);
+        resetGame();
+    }
+    else {
         gameOver = true;
     }
 }
@@ -379,6 +435,9 @@ int main(int argc, char** argv) {
     else if(levelNumber==5) 
     {
         currentLevel = &level5;
+    } else if(levelNumber==6) 
+    {
+        currentLevel = &level6;
     }
  
 

@@ -15,5 +15,6 @@ extern Level level2;
 extern Level level3;
 extern Level level4;
 extern Level level5;
+extern Level level6;
 
 #endif
