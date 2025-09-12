@@ -7,5 +7,5 @@ Level level4 = {
     6.0f,       // dx (faster ball)
     7.0f,       // dy (faster ball)
     60.0f,      // paddleWidth (smaller paddle)
-    {1.0f, 0.0f, 1.0f} // brickColor (magenta)
+    {0.7f, 0.3f, 0.9f} // brickColor (modern purple)
 };

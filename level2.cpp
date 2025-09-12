@@ -7,5 +7,5 @@ Level level2 = {
     4.0f,       // dx
     5.0f,       // dy
     90.0f,     // paddleWidth
-    {1.0f, 0.0f, 0.0f} // brickColor (red)
+    {0.9f, 0.3f, 0.3f} // brickColor (modern red)
 };
