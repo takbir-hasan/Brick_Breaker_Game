@@ -110,19 +110,74 @@ void resetGame() {
                 bricks.push_back({x, y}); 
             }
         }
-    } else {
+    } else if(currentLevel == &level2) {
+        // Regular grid for level2
         int cols = currentLevel->cols;
         int rows = currentLevel->rows;
 
-        // horizontal center calculation
-        float totalWidth = cols * (brickWidth + 10) - 10; // Total brick width +  10 px gap
+        float totalWidth = cols * (brickWidth + 10) - 10;
         float startX = (windowWidth - totalWidth) / 2;
 
         for (int r = 0; r < rows; r++) {
             for (int c = 0; c < cols; c++) {
                 float x = startX + c * (brickWidth + 10);
-                float y = r * (brickHeight + 10) + 80; // 80 px top margin and 10 px gap
+                float y = r * (brickHeight + 10) + 80;
                 bricks.push_back({x, y});
+            }
+        }
+    } else if(currentLevel == &level3) {
+        // Regular grid for level3
+        int cols = currentLevel->cols;
+        int rows = currentLevel->rows;
+
+        float totalWidth = cols * (brickWidth + 10) - 10;
+        float startX = (windowWidth - totalWidth) / 2;
+
+        for (int r = 0; r < rows; r++) {
+            for (int c = 0; c < cols; c++) {
+                float x = startX + c * (brickWidth + 10);
+                float y = r * (brickHeight + 10) + 80;
+                bricks.push_back({x, y});
+            }
+        }
+    } else if(currentLevel == &level4) {
+        // Diamond pattern for level4
+        int maxCols = currentLevel->cols;
+        int rows = currentLevel->rows;
+        
+        for(int r = 0; r < rows; r++) {
+            int cols;
+            if(r < rows/2) {
+                cols = r + 1; // Growing diamond
+            } else {
+                cols = rows - r; // Shrinking diamond
+            }
+            
+            float startX = (windowWidth - (cols * (brickWidth + 10) - 10)) / 2;
+            for(int c = 0; c < cols; c++) {
+                float x = startX + c * (brickWidth + 10);
+                float y = r * (brickHeight + 10) + 80;
+                bricks.push_back({x, y});
+            }
+        }
+    } else if(currentLevel == &level5) {
+        // Full grid with gaps for level5 (hardest)
+        int cols = currentLevel->cols;
+        int rows = currentLevel->rows;
+
+        float totalWidth = cols * (brickWidth + 10) - 10;
+        float startX = (windowWidth - totalWidth) / 2;
+
+        for (int r = 0; r < rows; r++) {
+            for (int c = 0; c < cols; c++) {
+                // Create gaps in the pattern for extra difficulty
+                if(!(r == 1 && c == 2) && !(r == 1 && c == 7) && 
+                   !(r == 3 && c == 1) && !(r == 3 && c == 8) &&
+                   !(r == 5 && c == 4) && !(r == 5 && c == 5)) {
+                    float x = startX + c * (brickWidth + 10);
+                    float y = r * (brickHeight + 10) + 80;
+                    bricks.push_back({x, y});
+                }
             }
         }
     }
@@ -142,6 +197,21 @@ void nextLevel() {
     { 
         levelNumber=2; 
         currentLevel=&level2; 
+        saveProgress(levelNumber); 
+        resetGame(); 
+    } else if(levelNumber == 2) {
+        levelNumber=3; 
+        currentLevel=&level3; 
+        saveProgress(levelNumber); 
+        resetGame(); 
+    } else if(levelNumber == 3) {
+        levelNumber=4; 
+        currentLevel=&level4; 
+        saveProgress(levelNumber); 
+        resetGame(); 
+    } else if(levelNumber == 4) {
+        levelNumber=5; 
+        currentLevel=&level5; 
         saveProgress(levelNumber); 
         resetGame(); 
     } else {
@@ -271,11 +341,11 @@ void keyboard(unsigned char key, int, int) { // We can ignore x and y because we
 void special(int key, int, int) {
     if (key == GLUT_KEY_LEFT && paddleX > 0)
     {
-        paddleX -= 15;
+        paddleX -= 25;
     }
     if (key == GLUT_KEY_RIGHT && paddleX + paddleWidth < windowWidth)
     {
-        paddleX += 15;
+        paddleX += 25;
     }
 }
 
@@ -297,6 +367,18 @@ int main(int argc, char** argv) {
     else if(levelNumber==2) 
     {
         currentLevel = &level2;
+    }
+    else if(levelNumber==3) 
+    {
+        currentLevel = &level3;
+    }
+    else if(levelNumber==4) 
+    {
+        currentLevel = &level4;
+    }
+    else if(levelNumber==5) 
+    {
+        currentLevel = &level5;
     }
  
 

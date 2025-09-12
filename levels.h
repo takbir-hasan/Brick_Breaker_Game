@@ -12,5 +12,8 @@ struct Level {
 
 extern Level level1;
 extern Level level2;
+extern Level level3;
+extern Level level4;
+extern Level level5;
 
 #endif
