@@ -1,10 +1,12 @@
 #include "levels.h"
 
+// Level 6 data - Full grid with maximum difficulty
+
 Level level6 = {
-    1,          // rows
-    1,          // cols
-    7.0f,        // dx
-    8.0f,        // dy
-    1100.0f,       // paddleWidth
-    {1.0f, 1.0f, 0.0f} // brickColor (white)
+    10,          // rows
+    9,         // cols
+    8.0f,       // dx (fastest ball)
+    9.0f,       // dy (fastest ball)
+    50.0f,      // paddleWidth (smallest paddle)
+    {0.1f, 0.3f, 0.4f} // brickColor (blue)
 };
